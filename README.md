@@ -1,1 +1,1 @@
-# pinin-ieroglify-to-kirillica
+# конвертер по системе Палладия
