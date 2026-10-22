@@ -375,31 +375,54 @@ function preprocessInput(text) {
 
 /**
  * Strip tone marks and return clean base letters + list of tone marks.
- * Properly preserves ü (never turns it into plain u).
+ * CRITICAL: ü must NEVER become plain u.
+ *
+ * NFD turns ü (U+00FC) into u + combining diaeresis (U+0308).
+ * We must detect that pair and emit ü instead of u.
  */
 function extractTonesAndClean(text) {
-    // First force precomposed ü so NFD does not split it into u+̈
-    text = text
+    // Handle precomposed toned letters first (āá… and ǖǘǚǜ → already 'ü')
+    let clean = [], tones = [];
+    let i = 0;
+    while (i < text.length) {
+        const ch = text[i];
+        if (TONE_MAP[ch]) {
+            clean.push(TONE_MAP[ch][0]);
+            tones.push({ pos: clean.length - 1, mark: TONE_MAP[ch][1] });
+            i++;
+        } else {
+            break;
+        }
+    }
+
+    // Remainder: may contain plain letters, combining marks, or precomposed ü
+    let rest = text.slice(i)
         .replace(/u\u0308/g, 'ü')
         .replace(/U\u0308/g, 'Ü');
 
-    text = text.normalize('NFD');
-    let clean = [], tones = [];
-    for (let i = 0; i < text.length; i++) {
-        const ch = text[i];
-        if (TONE_MAP[ch]) {
-            // Precomposed tone letter (ā á … ǖ ǘ …)
-            clean.push(TONE_MAP[ch][0]);          // already contains ü for ǖ etc.
-            tones.push({ pos: clean.length - 1, mark: TONE_MAP[ch][1] });
-        } else if (ch >= '\u0300' && ch <= '\u036f') {
-            // Combining mark – attach to previous character
-            // (skip the diaeresis itself because we already folded u+̈ → ü)
-            if (ch === '\u0308') continue;
+    // NFD will split ü → u+\u0308, so we re-compose while scanning
+    rest = rest.normalize('NFD');
+
+    for (let j = 0; j < rest.length; j++) {
+        const ch = rest[j];
+
+        if (ch >= '\u0300' && ch <= '\u036f') {
+            // combining mark
+            if (ch === '\u0308') continue; // already handled with preceding u
             if (clean.length) tones.push({ pos: clean.length - 1, mark: ch });
-        } else {
-            clean.push(ch);
+            continue;
         }
+
+        // Look-ahead: u/U + combining diaeresis → ü/Ü
+        if ((ch === 'u' || ch === 'U') && j + 1 < rest.length && rest[j + 1] === '\u0308') {
+            clean.push(ch === 'u' ? 'ü' : 'Ü');
+            j++; // skip diaeresis
+            continue;
+        }
+
+        clean.push(ch);
     }
+
     return { cleanText: clean.join(''), toneMarks: tones };
 }
 
