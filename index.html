@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пиньинь / Иероглифы → Палладица</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <!-- pinyin-pro for Hanzi → Pinyin -->
+    <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        vermilion: { 50:'#fff5f5',100:'#ffe3e3',500:'#e63946',600:'#c5221f',700:'#9b1c1c' },
+                        parchment: { 50:'#fbf9f4',100:'#f5efe0',200:'#e8dcbe',300:'#d7c49e',800:'#4a3f2c',900:'#2c2214' },
+                        jade: { 600:'#1b7a62',700:'#135947' }
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif SC"', '"Noto Serif"', 'Georgia', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f7f4ed;
+            background-image:
+                radial-gradient(circle at 50% 0%, rgba(197,34,31,0.05) 0%, transparent 70%),
+                radial-gradient(circle at 80% 80%, rgba(27,122,98,0.03) 0%, transparent 50%);
+            font-family: 'Noto Serif SC', 'Noto Serif', serif;
+        }
+        .trad-border { border:1px solid #e8dcbe; position:relative; }
+        .trad-border::before {
+            content:''; position:absolute; top:3px;left:3px;right:3px;bottom:3px;
+            border:1px solid rgba(197,34,31,0.15); pointer-events:none;
+        }
+        .paper-card {
+            background:#fbf9f4;
+            box-shadow:0 10px 30px -5px rgba(74,63,44,0.08), 0 0 2px rgba(0,0,0,0.05);
+        }
+        textarea::-webkit-scrollbar, div::-webkit-scrollbar { width:6px; }
+        textarea::-webkit-scrollbar-thumb, div::-webkit-scrollbar-thumb {
+            background-color:#d7c49e; border-radius:3px;
+        }
+        .toast-animate {
+            animation: fadeInOut 2s ease-in-out forwards;
+        }
+        @keyframes fadeInOut {
+            0% { opacity:0; transform:translateY(10px); }
+            15% { opacity:1; transform:translateY(0); }
+            85% { opacity:1; transform:translateY(0); }
+            100% { opacity:0; transform:translateY(-10px); }
+        }
+        .kb-btn {
+            min-width: 2.1rem;
+            height: 2.1rem;
+            font-size: 0.95rem;
+            border-radius: 0.4rem;
+            border: 1px solid #d7c49e;
+            background: #fff;
+            transition: all 0.15s;
+        }
+        .kb-btn:hover { background:#ffe3e3; border-color:#e63946; }
+        .kb-btn:active { transform:scale(0.94); }
+    </style>
+</head>
+<body class="min-h-screen text-parchment-900 flex flex-col justify-between p-3 sm:p-6 md:p-8">
+
+<header class="max-w-5xl mx-auto w-full text-center mb-5">
+    <div class="inline-flex items-center justify-center space-x-3 mb-1">
+        <span class="h-px w-10 bg-vermilion-600/40"></span>
+        <span class="text-vermilion-600 text-2xl sm:text-3xl font-bold tracking-wide">拼音 → Палладица</span>
+        <span class="h-px w-10 bg-vermilion-600/40"></span>
+    </div>
+    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-parchment-900 mb-1">
+        Пиньинь / Иероглифы → кириллица (система Палладия)
+    </h1>
+    <p class="text-xs sm:text-sm text-parchment-800 opacity-80 max-w-2xl mx-auto">
+        Поддержка пиньиня, иероглифов (упр./трад.), чжуинь (注音), тонов и географических названий.
+    </p>
+</header>
+
+<main class="max-w-5xl mx-auto w-full flex-grow">
+
+    <!-- Control bar -->
+    <div class="paper-card trad-border rounded-xl p-3 sm:p-4 mb-5 flex flex-wrap items-center gap-4 border">
+        <!-- Tone toggle -->
+        <label class="flex items-center cursor-pointer select-none gap-2">
+            <div class="relative">
+                <input type="checkbox" id="toneToggle" class="sr-only" onchange="convert()">
+                <div class="block w-11 h-6 bg-parchment-200 rounded-full border border-parchment-300" id="toggleBg"></div>
+                <div class="dot absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform shadow-sm" id="toggleDot"></div>
+            </div>
+            <div>
+                <span class="font-semibold text-sm block">Сохранять тоны</span>
+                <span class="text-xs opacity-70">диакритики на кириллических гласных</span>
+            </div>
+        </label>
+
+        <!-- Place-name switch -->
+        <label class="flex items-center cursor-pointer select-none gap-2">
+            <div class="relative">
+                <input type="checkbox" id="placeToggle" class="sr-only" onchange="convert()">
+                <div class="block w-11 h-6 bg-parchment-200 rounded-full border border-parchment-300" id="placeBg"></div>
+                <div class="dot absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform shadow-sm" id="placeDot"></div>
+            </div>
+            <div>
+                <span class="font-semibold text-sm block">Географические названия</span>
+                <span class="text-xs opacity-70">省/市/县/区… → семантический перевод</span>
+            </div>
+        </label>
+
+        <!-- Aspiration / simplified style switch -->
+        <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold whitespace-nowrap">Стиль согласных:</span>
+            <select id="aspStyle" onchange="convert()"
+                class="text-sm border border-parchment-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-vermilion-600/40">
+                <option value="0">Стандарт (б/п, д/т, г/к, цз/ц, чж/ч)</option>
+                <option value="1">С ’ (п’, т’, к’, ц’, ч’)</option>
+                <option value="2">Слияние (п=б, т=д, к=г, ц=z, ч=zh/j)</option>
+            </select>
+        </div>
+
+        <div class="text-xs bg-parchment-100 px-3 py-1.5 rounded-lg border border-parchment-200 flex items-center gap-2 ml-auto">
+            <i class="fa-solid fa-circle-info text-vermilion-600"></i>
+            <span><code class="font-mono bg-parchment-200/60 px-1 rounded">nv</code>/<code class="font-mono bg-parchment-200/60 px-1 rounded">lv</code> → <code class="font-mono bg-parchment-200/60 px-1 rounded">nü</code>/<code class="font-mono bg-parchment-200/60 px-1 rounded">lü</code></span>
+        </div>
+    </div>
+
+    <!-- Converter -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Input -->
+        <div class="paper-card trad-border rounded-xl p-4 flex flex-col h-[380px] md:h-[440px] shadow-sm">
+            <div class="flex justify-between items-center mb-2">
+                <label class="font-semibold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-pen-nib text-vermilion-600"></i>
+                    Ввод (пиньинь / 汉字 / 注音)
+                </label>
+                <button onclick="clearInput()" class="text-xs text-parchment-800 hover:text-vermilion-600 px-2 py-1 rounded hover:bg-parchment-100 flex items-center gap-1">
+                    <i class="fa-solid fa-rotate-left"></i> Очистить
+                </button>
+            </div>
+            <textarea id="input"
+                placeholder="Пример: 北京 Nǐ hǎo ㄅㄟˇㄐㄧㄥ 西安 Chang'an"
+                class="w-full flex-grow p-3 bg-white/70 border border-parchment-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-vermilion-600/40 resize-none font-serif text-base leading-relaxed"
+                oninput="convert()" spellcheck="false"></textarea>
+            <div class="mt-1 text-xs opacity-60 text-right">Автоматическое преобразование…</div>
+        </div>
+
+        <!-- Output -->
+        <div class="paper-card trad-border rounded-xl p-4 flex flex-col h-[380px] md:h-[440px] shadow-sm relative">
+            <div class="flex justify-between items-center mb-2">
+                <span class="font-semibold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-book-atlas text-jade-600"></i>
+                    Палладица
+                </span>
+                <button id="copyBtn" onclick="copyResult()"
+                    class="bg-vermilion-600 hover:bg-vermilion-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm flex items-center gap-1.5 active:scale-95">
+                    <i class="fa-regular fa-copy"></i> Копировать
+                </button>
+            </div>
+            <div id="output"
+                class="w-full flex-grow p-3 bg-white/90 border border-parchment-200 rounded-lg overflow-y-auto font-serif text-base leading-relaxed whitespace-pre-wrap select-text"></div>
+            <div class="mt-1 text-xs opacity-60 flex justify-between">
+                <span>* после <code class="font-mono">н</code> + гласная автоматически вставляется <code class="font-mono">ъ</code></span>
+                <span id="charCount">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboards -->
+    <div class="mt-5 paper-card trad-border rounded-xl p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-keyboard text-vermilion-600"></i> Клавиатура тонов и ü
+        </h3>
+        <div class="flex flex-wrap gap-1.5 mb-3" id="toneKeyboard"></div>
+        <div class="flex flex-wrap gap-1.5" id="uKeyboard"></div>
+    </div>
+
+    <!-- Examples -->
+    <section class="mt-5 paper-card trad-border rounded-xl p-4">
+        <h2 class="text-sm font-bold mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-lightbulb text-vermilion-600"></i> Примеры
+        </h2>
+        <div class="flex flex-wrap gap-2 text-xs sm:text-sm">
+            <button onclick="setExample('北京')" class="px-3 py-1.5 bg-white border border-parchment-200 hover:border-vermilion-600 rounded-lg">北京 → Бэйцзин</button>
+            <button onclick="setExample('西安')" class="px-3 py-1.5 bg-white border border-parchment-200 hover:border-vermilion-600 rounded-lg">西安 → Сиань</button>
+            <button onclick="setExample('长安')" class="px-3 py-1.5 bg-white border border-parchment-200 hover:border-vermilion-600 rounded-lg">长安 → Чанъань</button>
+            <button onclick="setExample('毛泽东')" class="px-3 py-1.5 bg-white border border-parchment-200 hover:border-vermilion-600 rounded-lg">毛泽东 → Мао Цзэдун</button>
+            <button onclick="setExample('广东省')" class="px-3 py-1.5 bg-white border border-parchment-200 hover:border-vermilion-600 rounded-lg">广东省 (гео)</button>
+            <button onclick="setExample('东城区')" class="px-3 py-1.5 bg-white border border-parchment-200 hover:border-vermilion-600 rounded-lg">东城区 (гео)</button>
+            <button onclick="setExample('Nǐ hǎo')" class="px-3 py-1.5 bg-white border border-parchment-200 hover:border-vermilion-600 rounded-lg">Nǐ hǎo</button>
+            <button onclick="setExample('ㄅㄟˇㄐㄧㄥ')" class="px-3 py-1.5 bg-white border border-parchment-200 hover:border-vermilion-600 rounded-lg">ㄅㄟˇㄐㄧㄥ</button>
+        </div>
+    </section>
+</main>
+
+<footer class="max-w-5xl mx-auto w-full text-center mt-6 pt-3 border-t border-parchment-200 text-xs opacity-75">
+    <p>Система Палладия (Палладица) • Пиньинь / Иероглифы → кириллица</p>
+</footer>
+
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-parchment-900 text-white text-xs px-4 py-2.5 rounded-lg shadow-lg pointer-events-none opacity-0 z-50 flex items-center gap-2">
+    <i class="fa-solid fa-circle-check text-green-400"></i>
+    <span id="toastMsg">Скопировано!</span>
+</div>
+
+<script>
+/* ===================== 1. PALLADIUS MAP ===================== */
+const RAW_PALLADIUS_MAP = {
+    "a":"а","ai":"ай","an":"ань","ang":"ан","ao":"ао",
+    "ba":"ба","bai":"бай","ban":"бань","bang":"бан","bao":"бао","bei":"бэй","ben":"бэнь","beng":"бэн","bi":"би","bian":"бянь","biao":"бяо","bie":"бе","bin":"бинь","bing":"бин","bo":"бо","bu":"бу",
+    "ca":"ца","cai":"цай","can":"цань","cang":"цан","cao":"цао","ce":"цэ","cei":"цэй","cen":"цэнь","ceng":"цэн","ci":"цы","cong":"цун","cou":"цоу","cu":"цу","cuan":"цуань","cui":"цуй","cun":"цунь","cuo":"цо",
+    "cha":"ча","chai":"чай","chan":"чань","chang":"чан","chao":"чао","che":"чэ","chen":"чэнь","cheng":"чэн","chi":"чи","chong":"чун","chou":"чоу","chu":"чу","chua":"чуа","chuai":"чуай","chuan":"чуань","chuang":"чуан","chui":"чуй","chun":"чунь","chuo":"чо",
+    "da":"да","dai":"дай","dan":"дань","dang":"дан","dao":"дао","de":"дэ","dei":"дэй","den":"дэнь","deng":"дэн","di":"ди","dia":"дя","dian":"дянь","diang":"дян","diao":"дяо","die":"де","ding":"дин","diu":"дю","dong":"дун","dou":"доу","du":"ду","duan":"дуань","dui":"дуй","dun":"дунь","duo":"до",
+    "e":"э","ê":"эй","ei":"эй","en":"энь","eng":"эн","er":"эр",
+    "fa":"фа","fan":"фань","fang":"фан","fei":"фэй","fen":"фэнь","feng":"фэн","fiao":"фяо","fo":"фо","fou":"фоу","fu":"фу",
+    "ga":"га","gai":"гай","gan":"гань","gang":"ган","gao":"гао","ge":"гэ","gei":"гэй","gen":"гэнь","geng":"гэн","go":"го","gong":"гун","gou":"гоу","gu":"гу","gua":"гуа","guai":"гуай","guan":"гуань","guang":"гуан","gui":"гуй","gun":"гунь","guo":"го",
+    "ha":"ха","hai":"хай","han":"хань","hang":"хан","hao":"хао","he":"хэ","hei":"хэй","hen":"хэнь","heng":"хэн","hm":"хм","hng":"хн","hong":"хун","hou":"хоу","hu":"ху","hua":"хуа","huai":"хуай","huan":"хуань","huang":"хуан","hui":"хуэй","hun":"хунь","huo":"хо",
+    "ji":"цзи","jia":"цзя","jian":"цзянь","jiang":"цзян","jiao":"цзяо","jie":"цзе","jin":"цзинь","jing":"цзин","jiong":"цзюн","jiu":"цзю","ju":"цзюй","juan":"цзюань","jue":"цзюэ","jun":"цзюнь",
+    "ka":"ка","kai":"кай","kan":"кань","kang":"кан","kao":"као","ke":"кэ","kei":"кэй","ken":"кэнь","keng":"кэн","kong":"кун","kou":"коу","ku":"ку","kua":"куа","kuai":"куай","kuan":"куань","kuang":"куан","kui":"куй","kun":"кунь","kuo":"ко",
+    "la":"ла","lai":"лай","lan":"лань","lang":"лан","lao":"лао","le":"лэ","lei":"лэй","leng":"лэн","li":"ли","lia":"ля","lian":"лянь","liang":"лян","liao":"ляо","lie":"ле","lin":"линь","ling":"лин","liu":"лю","lo":"ло","long":"лун","lou":"лоу","lu":"лу","lü":"люй","luan":"луань","lüan":"люань","lüe":"люэ","lun":"лунь","lün":"люнь","luo":"ло",
+    "m":"м","ma":"ма","mai":"май","man":"мань","mang":"ман","mao":"мао","me":"мэ","mei":"мэй","men":"мэнь","meng":"мэн","mi":"ми","mian":"мянь","miao":"мяо","mie":"ме","min":"минь","ming":"мин","miu":"мю","mm":"мм","mo":"мо","mou":"моу","mu":"му",
+    "n":"нь","na":"на","nai":"най","nan":"нань","nang":"нан","nao":"нао","ne":"нэ","nei":"нэй","nen":"нэнь","neng":"нэн","ng":"н","ni":"ни","nia":"ня","nian":"нянь","niang":"нян","niao":"няо","nie":"не","nin":"нинь","ning":"нин","niu":"ню","nong":"нун","nou":"ноу","nu":"ну","nun":"нунь","nü":"нюй","nuan":"нуань","nüe":"нюэ","nuo":"но",
+    "o":"о","ou":"оу",
+    "pa":"па","pai":"пай","pan":"пань","pang":"пан","pao":"пао","pei":"пэй","pen":"пэнь","peng":"пэн","pi":"пи","pian":"пянь","piang":"пян","piao":"пяо","pie":"пе","pin":"пинь","ping":"пин","po":"по","pou":"поу","pu":"пу",
+    "qi":"ци","qia":"ця","qian":"цянь","qiang":"цян","qiao":"цяо","qie":"це","qin":"цинь","qing":"цин","qiong":"цюн","qiu":"цю","qu":"цюй","quan":"цюань","que":"цюэ","qun":"цюнь",
+    "ran":"жань","rang":"жан","rao":"жао","re":"жэ","rem":"жэм","ren":"жэнь","reng":"жэн","ri":"жи","rong":"жун","rou":"жоу","ru":"жу","rua":"жуа","ruan":"жуань","rui":"жуй","run":"жунь","ruo":"жо",
+    "sa":"са","sai":"сай","san":"сань","sang":"сан","sao":"сао","se":"сэ","sei":"сэй","sen":"сэнь","seng":"сэн","si":"сы","song":"сун","sou":"соу","su":"су","suan":"суань","sui":"суй","sun":"сунь","suo":"со",
+    "sha":"ша","shai":"шай","shan":"шань","shang":"шан","shao":"шао","she":"шэ","shei":"шэй","shen":"шэнь","sheng":"шэн","shi":"ши","shou":"шоу","shu":"шу","shua":"шуа","shuai":"шуай","shuan":"шуань","shuang":"шуан","shui":"шуй","shun":"шунь","shuo":"шо",
+    "ta":"та","tai":"тай","tan":"тань","tang":"тан","tao":"тао","te":"тэ","tei":"тэй","ten":"тэнь","teng":"тэн","ti":"ти","tian":"тянь","tiang":"тян","tiao":"тяо","tie":"те","ting":"тин","tong":"тун","tou":"тоу","tu":"ту","tuan":"туань","tui":"туй","tun":"тунь","tuo":"то",
+    "wa":"ва","wai":"вай","wan":"вань","wang":"ван","wao":"вао","wei":"вэй","wen":"вэнь","weng":"вэн","wo":"во","wu":"у",
+    "xi":"си","xia":"ся","xian":"сянь","xiang":"сян","xiao":"сяо","xie":"се","xin":"синь","xing":"син","xiong":"сюн","xiu":"сю","xu":"сюй","xuan":"сюань","xue":"сюэ","xun":"сюнь",
+    "ya":"я","yai":"яй","yan":"янь","yang":"ян","yao":"яо","ye":"е","yi":"и","yin":"инь","ying":"ин","yo":"йо","yong":"юн","you":"ю","yu":"юй","yuan":"юань","yue":"юэ","yun":"юнь",
+    "za":"цза","zai":"цзай","zan":"цзань","zang":"цзан","zao":"цзао","ze":"цзэ","zei":"цзэй","zem":"цзэм","zen":"цзэнь","zeng":"цзэн","zi":"цзы","zong":"цзун","zou":"цзоу","zu":"цзу","zuan":"цзуань","zui":"цзуй","zun":"цзунь","zuo":"цзо",
+    "zha":"чжа","zhai":"чжай","zhan":"чжань","zhang":"чжан","zhao":"чжао","zhe":"чжэ","zhei":"чжэй","zhen":"чжэнь","zheng":"чжэн","zhi":"чжи","zhong":"чжун","zhou":"чжоу","zhu":"чжу","zhua":"чжуа","zhuai":"чжуай","zhuan":"чжуань","zhuang":"чжуан","zhui":"чжуй","zhun":"чжунь","zhuo":"чжо"
+};
+
+const PINYIN_KEYS = Object.keys(RAW_PALLADIUS_MAP).sort((a,b) => b.length - a.length);
+const CYRILLIC_VOWELS = new Set(['а','е','ё','и','о','у','ы','э','ю','я','А','Е','Ё','И','О','У','Ы','Э','Ю','Я']);
+
+/**
+ * Return the Cyrillic mapping for a pinyin key, applying the selected consonant style.
+ *
+ * style 0 – standard Palladius (б/п, д/т, г/к, цз/ц, чж/ч, цз/ц for j/q)
+ * style 1 – aspirated with apostrophe: п’ т’ к’ ц’ ч’  (unaspirated stay standard)
+ * style 2 – merge: b→п, d→т, g→к, z→ц, zh→ч, j→ч
+ *            and aspirated also without extra mark (or with ’ if desired – here plain)
+ *
+ * User request mapping:
+ *   k = 1.к’ 2.к     g = к
+ *   t = 1.т’ 2.т     d = т
+ *   p = 1.п’ 2.п     b = п
+ *   c = 1.ц’ 2.ц     z = ц
+ *   ch= 1.ч’ 2.ч     zh= ч
+ *   q = 1.ч’ 2.ч     j = ч
+ */
+function getMapped(key) {
+    const style = document.getElementById('aspStyle')
+        ? parseInt(document.getElementById('aspStyle').value, 10)
+        : 0;
+
+    let base = RAW_PALLADIUS_MAP[key];
+    if (!base) return key;
+
+    if (style === 0) return base;
+
+    // Helper: does this key start with an aspirated initial?
+    const aspirated = /^(p|t|k|c|ch|q)/.test(key);
+    const unaspiratedMerge = /^(b|d|g|z|zh|j)/.test(key);
+
+    if (style === 1) {
+        // Add ’ only to the aspirated series
+        if (aspirated) {
+            // Replace the leading letter(s) with the same + ’
+            // п→п’, т→т’, к→к’, ц→ц’, ч→ч’  (and цз stays for j? no, q is ц)
+            if (base.startsWith('п')) base = 'п’' + base.slice(1);
+            else if (base.startsWith('т')) base = 'т’' + base.slice(1);
+            else if (base.startsWith('к')) base = 'к’' + base.slice(1);
+            else if (base.startsWith('ц') && !base.startsWith('цз')) base = 'ц’' + base.slice(1);
+            else if (base.startsWith('ч') && !base.startsWith('чж')) base = 'ч’' + base.slice(1);
+            // q → ци… already starts with ц; handled above
+        }
+        return base;
+    }
+
+    if (style === 2) {
+        // Merge voiced → voiceless, no apostrophe
+        // b→п, d→т, g→к, z→ц, zh→ч, j→ч
+        if (base.startsWith('б')) base = 'п' + base.slice(1);
+        else if (base.startsWith('д')) base = 'т' + base.slice(1);
+        else if (base.startsWith('г')) base = 'к' + base.slice(1);
+        else if (base.startsWith('цз')) base = 'ц' + base.slice(2);   // z & j
+        else if (base.startsWith('чж')) base = 'ч' + base.slice(2);   // zh
+        // aspirated already use п/т/к/ц/ч – leave them
+        return base;
+    }
+
+    return base;
+}
+
+/* ===================== 2. TONE & ü ===================== */
+const TONE_MAP = {
+    'ā':['a','\u0304'],'á':['a','\u0301'],'ǎ':['a','\u030c'],'à':['a','\u0300'],
+    'ē':['e','\u0304'],'é':['e','\u0301'],'ě':['e','\u030c'],'è':['e','\u0300'],
+    'ī':['i','\u0304'],'í':['i','\u0301'],'ǐ':['i','\u030c'],'ì':['i','\u0300'],
+    'ō':['o','\u0304'],'ó':['o','\u0301'],'ǒ':['o','\u030c'],'ò':['o','\u0300'],
+    'ū':['u','\u0304'],'ú':['u','\u0301'],'ǔ':['u','\u030c'],'ù':['u','\u0300'],
+    'ǖ':['ü','\u0304'],'ǘ':['ü','\u0301'],'ǚ':['ü','\u030c'],'ǜ':['ü','\u0300'],
+    'Ā':['A','\u0304'],'Á':['A','\u0301'],'Ǎ':['A','\u030c'],'À':['A','\u0300'],
+    'Ē':['E','\u0304'],'É':['E','\u0301'],'Ě':['E','\u030c'],'È':['E','\u0300'],
+    'Ī':['I','\u0304'],'Í':['I','\u0301'],'Ǐ':['I','\u030c'],'Ì':['I','\u0300'],
+    'Ō':['O','\u0304'],'Ó':['O','\u0301'],'Ǒ':['O','\u030c'],'Ò':['O','\u0300'],
+    'Ū':['U','\u0304'],'Ú':['U','\u0301'],'Ǔ':['U','\u030c'],'Ù':['U','\u0300'],
+    'Ǖ':['Ü','\u0304'],'Ǘ':['Ü','\u0301'],'Ǚ':['Ü','\u030c'],'Ǜ':['Ü','\u0300']
+};
+
+/* ===================== 3. ZHUYIN (Bopomofo) → PINYIN ===================== */
+const ZHUYIN_MAP = {
+    "ㄅ":"b","ㄆ":"p","ㄇ":"m","ㄈ":"f",
+    "ㄉ":"d","ㄊ":"t","ㄋ":"n","ㄌ":"l",
+    "ㄍ":"g","ㄎ":"k","ㄏ":"h",
+    "ㄐ":"j","ㄑ":"q","ㄒ":"x",
+    "ㄓ":"zh","ㄔ":"ch","ㄕ":"sh","ㄖ":"r",
+    "ㄗ":"z","ㄘ":"c","ㄙ":"s",
+    "ㄚ":"a","ㄛ":"o","ㄜ":"e","ㄝ":"ê",
+    "ㄞ":"ai","ㄟ":"ei","ㄠ":"ao","ㄡ":"ou",
+    "ㄢ":"an","ㄣ":"en","ㄤ":"ang","ㄥ":"eng","ㄦ":"er",
+    "ㄧ":"i","ㄨ":"u","ㄩ":"ü",
+    "ˊ":"2","ˇ":"3","ˋ":"4","˙":"5"
+};
+
+/* ===================== 4. PLACE-NAME ELEMENTS (semantic) ===================== */
+const PLACE_ELEMENTS = [
+    // longer first
+    { py: ["zizhiqu"], ru: "автономный район", han: ["自治区"] },
+    { py: ["zizhizhou"], ru: "автономный округ", han: ["自治州"] },
+    { py: ["sheng"], ru: "провинция", han: ["省"] },
+    { py: ["shi"], ru: "город", han: ["市"] },
+    { py: ["xian"], ru: "уезд", han: ["县","縣"] },
+    { py: ["qu"], ru: "район", han: ["区","區"] },
+    { py: ["zhen"], ru: "посёлок", han: ["镇","鎮"] },
+    { py: ["xiang"], ru: "волость", han: ["乡","鄉"] },
+    { py: ["meng"], ru: "аймак", han: ["盟"] },
+    { py: ["qi"], ru: "хошун", han: ["旗"] }
+];
+
+const DIRECTION_MAP = {
+    "dong": "Восточный", "xi": "Западный", "nan": "Южный", "bei": "Северный",
+    "东": "Восточный", "西": "Западный", "南": "Южный", "北": "Северный",
+    "東": "Восточный"
+};
+
+/* ===================== 5. HELPERS ===================== */
+function preprocessInput(text) {
+    // 1) classic v → ü
+    text = text
+        .replace(/n[vV]/g, 'nü').replace(/N[vV]/g, 'Nü')
+        .replace(/l[vV]/g, 'lü').replace(/L[vV]/g, 'Lü');
+
+    // 2) Normalize any u + combining diaeresis (ü) back to precomposed ü
+    //    This is critical for characters like 綠 → lǜ → (NFD) l + u + ̈ + tone
+    text = text
+        .replace(/u\u0308/g, 'ü')
+        .replace(/U\u0308/g, 'Ü')
+        .replace(/ü\u0308/g, 'ü')   // just in case
+        .replace(/Ü\u0308/g, 'Ü');
+
+    return text;
+}
+
+/**
+ * Strip tone marks and return clean base letters + list of tone marks.
+ * Properly preserves ü (never turns it into plain u).
+ */
+function extractTonesAndClean(text) {
+    // First force precomposed ü so NFD does not split it into u+̈
+    text = text
+        .replace(/u\u0308/g, 'ü')
+        .replace(/U\u0308/g, 'Ü');
+
+    text = text.normalize('NFD');
+    let clean = [], tones = [];
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (TONE_MAP[ch]) {
+            // Precomposed tone letter (ā á … ǖ ǘ …)
+            clean.push(TONE_MAP[ch][0]);          // already contains ü for ǖ etc.
+            tones.push({ pos: clean.length - 1, mark: TONE_MAP[ch][1] });
+        } else if (ch >= '\u0300' && ch <= '\u036f') {
+            // Combining mark – attach to previous character
+            // (skip the diaeresis itself because we already folded u+̈ → ü)
+            if (ch === '\u0308') continue;
+            if (clean.length) tones.push({ pos: clean.length - 1, mark: ch });
+        } else {
+            clean.push(ch);
+        }
+    }
+    return { cleanText: clean.join(''), toneMarks: tones };
+}
+
+/** Prefer vowel+n | g+vowel when ng sits between two vowels */
+function smartSyllableSplit(token) {
+    // simple heuristic: if we see [aeiouü]ng[aeiouü] treat as [aeiouü]n + g[aeiouü]
+    return token.replace(/([aeiouüAEIOUÜ])ng([aeiouüAEIOUÜ])/g, '$1n g$2');
+}
+
+function convertPinyinToken(token) {
+    let result = "", idx = 0;
+    const lower = token.toLowerCase();
+    while (idx < token.length) {
+        let matched = false;
+        const sub = lower.slice(idx);
+        for (const key of PINYIN_KEYS) {
+            if (sub.startsWith(key)) {
+                let mapped = getMapped(key);
+                const orig = token.slice(idx, idx + key.length);
+                if (orig === orig.toUpperCase() && orig.length > 1) mapped = mapped.toUpperCase();
+                else if (orig[0] === orig[0].toUpperCase()) mapped = mapped[0].toUpperCase() + mapped.slice(1);
+                result += mapped;
+                idx += key.length;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) { result += token[idx]; idx++; }
+    }
+    return result;
+}
+
+/**
+ * Insert ъ only when н is syllable-final and the next character is a vowel.
+ * Syllable-initial н (на, ни, ню…) must NOT receive ъ.
+ *
+ * Rule: insert ъ only when the character immediately before н is a Cyrillic vowel
+ * (…а н а → …анъа). If н is at the start of a word/syllable, leave it alone.
+ */
+function applyHardSignRule(text) {
+    let res = [];
+    for (let i = 0; i < text.length; i++) {
+        const curr = text[i];
+        const next = text[i + 1];
+        const prev = text[i - 1];
+
+        res.push(curr);
+
+        if ((curr === 'н' || curr === 'Н') && next && CYRILLIC_VOWELS.has(next)) {
+            // Only syllable-final н (preceded by a vowel)
+            if (prev && CYRILLIC_VOWELS.has(prev)) {
+                res.push('ъ');
+            }
+        }
+    }
+    return res.join('');
+}
+
+function attachTones(cyr, original) {
+    const decomp = original.normalize('NFD');
+    let tone = null;
+    for (const ch of decomp) {
+        if (ch >= '\u0300' && ch <= '\u036f') { tone = ch; break; }
+    }
+    if (!tone) return cyr;
+    let out = [], placed = false;
+    for (const ch of cyr) {
+        out.push(ch);
+        if (!placed && CYRILLIC_VOWELS.has(ch)) {
+            out.push(tone);
+            placed = true;
+        }
+    }
+    return out.join('').normalize('NFC');
+}
+
+/* ===================== 6. ZHUYIN → PINYIN ===================== */
+function zhuyinToPinyin(text) {
+    // very simplified sequential conversion
+    let result = "";
+    let i = 0;
+    while (i < text.length) {
+        let found = false;
+        // try 2-char then 1-char
+        for (let len = 2; len >= 1; len--) {
+            const chunk = text.slice(i, i + len);
+            if (ZHUYIN_MAP[chunk] !== undefined) {
+                result += ZHUYIN_MAP[chunk];
+                i += len;
+                found = true;
+                break;
+            }
+        }
+        if (!found) { result += text[i]; i++; }
+    }
+    // crude tone number placement (ignore for now, just strip)
+    return result.replace(/[2-5]/g, '');
+}
+
+/* ===================== 7. HANZI → list of syllables (preserve boundaries) ===================== */
+/**
+ * Returns an array of tokens.
+ * Each token is either:
+ *   { type: 'syl', py: 'lǜ', original: '綠' }   – a real Chinese syllable
+ *   { type: 'ws',  text: '\n' }                  – whitespace (exact)
+ *   { type: 'raw', text: '...' }                 – non-Chinese text
+ *
+ * This preserves syllable boundaries so that later stages can know
+ * whether an "n" is syllable-initial or syllable-final.
+ */
+function hanziToSyllableList(text) {
+    if (typeof pinyinPro === 'undefined' || !pinyinPro.pinyin) {
+        console.warn('pinyin-pro not loaded');
+        return [{ type: 'raw', text: text }];
+    }
+    const toneType = document.getElementById('toneToggle').checked ? 'symbol' : 'none';
+    const tokens = [];
+    let i = 0;
+    while (i < text.length) {
+        const ch = text[i];
+        if (/\s/.test(ch)) {
+            // gather consecutive whitespace
+            let ws = '';
+            while (i < text.length && /\s/.test(text[i])) {
+                ws += text[i++];
+            }
+            tokens.push({ type: 'ws', text: ws });
+            continue;
+        }
+        if (/[\u4e00-\u9fff]/.test(ch)) {
+            // gather a run of Hanzi
+            let run = '';
+            while (i < text.length && /[\u4e00-\u9fff]/.test(text[i])) {
+                run += text[i++];
+            }
+            // pinyin-pro returns one syllable per character (with correct boundaries)
+            const pyArr = pinyinPro.pinyin(run, {
+                toneType: toneType,
+                type: 'array',
+                nonZh: 'consecutive'
+            });
+            const chars = Array.from(run);
+            for (let k = 0; k < pyArr.length; k++) {
+                tokens.push({
+                    type: 'syl',
+                    py: String(pyArr[k]),
+                    original: chars[k] || ''
+                });
+            }
+            continue;
+        }
+        // non-Chinese run
+        let raw = '';
+        while (i < text.length && !/[\u4e00-\u9fff\s]/.test(text[i])) {
+            raw += text[i++];
+        }
+        tokens.push({ type: 'raw', text: raw });
+    }
+    return tokens;
+}
+
+/* ===================== 8. PLACE-NAME LOGIC ===================== */
+function processPlaceNameFromSyllables(sylTokens, originalText) {
+    if (!document.getElementById('placeToggle').checked) return null;
+
+    // Build continuous pinyin (no spaces) for matching
+    const pyStr = sylTokens
+        .filter(t => t.type === 'syl')
+        .map(t => t.py.toLowerCase().replace(/[1-5]/g, ''))
+        .join('');
+
+    for (const el of PLACE_ELEMENTS) {
+        for (const py of el.py) {
+            if (pyStr.endsWith(py)) {
+                // name part = everything before the place element
+                const nameSyls = [];
+                let remaining = pyStr.slice(0, -py.length);
+                // re-consume syllables that belong to the name
+                let acc = '';
+                for (const t of sylTokens) {
+                    if (t.type !== 'syl') continue;
+                    const clean = t.py.toLowerCase().replace(/[1-5]/g, '');
+                    if (acc.length + clean.length <= remaining.length) {
+                        nameSyls.push(t);
+                        acc += clean;
+                    } else break;
+                }
+                let nameCyr = nameSyls.map(t => convertOneSyllable(t.py)).join('');
+                nameCyr = applyHardSignBetweenSyllables(nameCyr, nameSyls);
+                if (nameCyr.length) {
+                    nameCyr = nameCyr.charAt(0).toUpperCase() + nameCyr.slice(1);
+                }
+                return `${el.ru} ${nameCyr}`;
+            }
+        }
+    }
+
+    // single-character direction
+    const trimmed = originalText.trim();
+    if (trimmed.length === 1 && DIRECTION_MAP[trimmed]) {
+        return DIRECTION_MAP[trimmed];
+    }
+    if (DIRECTION_MAP[pyStr]) return DIRECTION_MAP[pyStr];
+
+    return null;
+}
+
+/* ===================== 9. MAIN CONVERT ===================== */
+function convert() {
+    const inputEl = document.getElementById('input');
+    const outputEl = document.getElementById('output');
+    const toneOn = document.getElementById('toneToggle').checked;
+    updateToggleUI(toneOn, 'toggleBg', 'toggleDot');
+    updateToggleUI(document.getElementById('placeToggle').checked, 'placeBg', 'placeDot');
+
+    const raw = inputEl.value;
+    document.getElementById('charCount').textContent = raw.length + ' симв.';
+
+    if (!raw.trim()) {
+        outputEl.textContent = '';
+        return;
+    }
+
+    const hasHanzi = /[\u4e00-\u9fff]/.test(raw);
+
+    // ---------- Path A: Hanzi present → work with syllable list ----------
+    if (hasHanzi) {
+        const tokens = hanziToSyllableList(raw);
+
+        // Place-name mode
+        if (document.getElementById('placeToggle').checked) {
+            // group by lines so \n is preserved
+            const lines = [];
+            let cur = [];
+            for (const t of tokens) {
+                if (t.type === 'ws' && t.text.includes('\n')) {
+                    if (cur.length) lines.push(cur);
+                    // keep the newline itself
+                    lines.push([{ type: 'ws', text: '\n' }]);
+                    cur = [];
+                } else {
+                    cur.push(t);
+                }
+            }
+            if (cur.length) lines.push(cur);
+
+            const out = lines.map(lineTokens => {
+                if (lineTokens.length === 1 && lineTokens[0].type === 'ws') return lineTokens[0].text;
+                const place = processPlaceNameFromSyllables(lineTokens, raw);
+                if (place) return place;
+                return convertSyllableList(lineTokens, toneOn);
+            }).join('');
+            outputEl.textContent = out;
+            return;
+        }
+
+        // Normal mode
+        outputEl.textContent = convertSyllableList(tokens, toneOn);
+        return;
+    }
+
+    // ---------- Path B: pure pinyin / zhuyin ----------
+    let text = raw;
+    if (/[ㄅ-ㄩˊˇˋ˙]/.test(text)) {
+        text = zhuyinToPinyin(text);
+    }
+    text = preprocessInput(text);
+
+    if (document.getElementById('placeToggle').checked) {
+        const lines = text.split(/(\n)/);
+        const processed = lines.map(line => {
+            if (line === '\n') return '\n';
+            if (!line.trim()) return line;
+            // fallback for pure pinyin place names
+            const dummy = [{ type: 'syl', py: line.replace(/\s+/g, '') }];
+            const place = processPlaceNameFromSyllables(dummy, raw);
+            if (place) return place;
+            return convertPlainPinyin(line, toneOn);
+        });
+        outputEl.textContent = processed.join('');
+        return;
+    }
+
+    outputEl.textContent = convertPlainPinyin(text, toneOn);
+}
+
+/** Convert a list of syllable tokens → Cyrillic, preserving whitespace */
+function convertSyllableList(tokens, toneOn) {
+    const parts = [];
+    for (let i = 0; i < tokens.length; i++) {
+        const t = tokens[i];
+        if (t.type === 'ws' || t.type === 'raw') {
+            parts.push(t.text);
+            continue;
+        }
+        // type === 'syl'
+        let cyr = convertOneSyllable(t.py);
+        if (toneOn) cyr = attachTones(cyr, t.py);
+
+        // Hard-sign decision using *real* syllable boundaries:
+        // if this syllable ends with н and the *next* syllable starts with a vowel → insert ъ
+        if (i + 1 < tokens.length && tokens[i + 1].type === 'syl') {
+            const nextCyr = convertOneSyllable(tokens[i + 1].py);
+            if ((cyr.endsWith('н') || cyr.endsWith('Н')) &&
+                nextCyr.length && CYRILLIC_VOWELS.has(nextCyr[0])) {
+                cyr += 'ъ';
+            }
+        }
+        parts.push(cyr);
+    }
+    return parts.join('');
+}
+
+/** Convert a single pinyin syllable (may contain tone marks / ü) */
+function convertOneSyllable(py) {
+    // Never turn ü into u
+    let s = py
+        .replace(/u\u0308/g, 'ü')
+        .replace(/U\u0308/g, 'Ü');
+    s = preprocessInput(s);          // nv/lv → nü/lü, keep ü
+    const { cleanText } = extractTonesAndClean(s);
+    return convertPinyinToken(cleanText);
+}
+
+/**
+ * Soft hard-sign for the rare case when we already have a continuous string
+ * (used only inside place-name helper). Prefer the syllable-aware version.
+ */
+function applyHardSignBetweenSyllables(cyrStr, sylTokens) {
+    // already handled inside convertSyllableList; this is a no-op fallback
+    return cyrStr;
+}
+
+/**
+ * Core pinyin → Cyrillic for pure romanization input (no Hanzi).
+ * CRITICAL: never insert extra spaces. Output must contain exactly the same
+ * whitespace characters (and count) as the input.
+ *
+ * Syllable decisions for "n" / "ng" are made internally without adding spaces.
+ */
+function convertPlainPinyin(text, toneOn) {
+    // Split while keeping every whitespace token exactly as it appears
+    const tokens = text.split(/(\s+)/);
+
+    const converted = tokens.map(tok => {
+        // Pure whitespace → return unchanged (same count, same characters)
+        if (/^\s+$/.test(tok)) return tok;
+
+        // Apostrophe-separated parts (Xi'an) – apostrophe itself disappears
+        // after the split, as is conventional for Palladius
+        const parts = tok.split("'");
+        return parts.map(p => convertContinuousPinyin(p, toneOn)).join('');
+    }).join('');
+
+    return converted;
+}
+
+/**
+ * Convert a continuous pinyin string (no spaces inside) to Cyrillic.
+ * Handles:
+ *   - ü never becomes u
+ *   - vowel+n+vowel  → prefer  vowel | n+vowel   (n = onset of next syllable)
+ *   - vowel+ng+vowel → prefer  vowel+n | g+vowel
+ *   - hard sign ъ only when a syllable really ends in н and next starts with vowel
+ * All decisions are made without inserting any space characters.
+ */
+function convertContinuousPinyin(str, toneOn) {
+    if (!str) return '';
+
+    // Protect ü
+    let s = str
+        .replace(/u\u0308/g, 'ü')
+        .replace(/U\u0308/g, 'Ü');
+    s = preprocessInput(s);
+
+    // Greedy match with preference rule:
+    // when a candidate syllable ends with "n"/"ng" and the remainder starts
+    // with a vowel, prefer to leave the n/g for the next syllable if that
+    // produces a valid next syllable.
+    const result = [];
+    let i = 0;
+    const lower = s.toLowerCase();
+
+    while (i < s.length) {
+        let matched = false;
+
+        for (const key of PINYIN_KEYS) {
+            if (!lower.startsWith(key, i)) continue;
+
+            const end = i + key.length;
+            const rest = lower.slice(end);
+
+            // Preference: resyllabify final -n / -ng when possible
+            if ((key.endsWith('n') || key.endsWith('ng')) && rest.length > 0) {
+                const firstRest = rest[0];
+                if ('aeiouü'.includes(firstRest)) {
+                    const tryOnset = key.endsWith('ng') ? 'g' + rest : 'n' + rest;
+                    let canResyllabify = false;
+                    for (const k2 of PINYIN_KEYS) {
+                        if (tryOnset.startsWith(k2)) {
+                            canResyllabify = true;
+                            break;
+                        }
+                    }
+                    if (canResyllabify) continue; // force shorter match
+                }
+            }
+
+            // Accept this match
+            const origSlice = s.slice(i, end);
+            let mapped = getMapped(key);
+
+            // Capitalization
+            if (origSlice === origSlice.toUpperCase() && origSlice.length > 1) {
+                mapped = mapped.toUpperCase();
+            } else if (origSlice[0] === origSlice[0].toUpperCase()) {
+                mapped = mapped[0].toUpperCase() + mapped.slice(1);
+            }
+
+            if (toneOn) {
+                mapped = attachTones(mapped, origSlice);
+            }
+
+            result.push(mapped);
+            i = end;
+            matched = true;
+            break;
+        }
+
+        if (!matched) {
+            result.push(s[i]);
+            i++;
+        }
+    }
+
+    // Insert ъ between consecutive mapped syllables when needed
+    let out = '';
+    for (let k = 0; k < result.length; k++) {
+        out += result[k];
+        if (k + 1 < result.length) {
+            const cur = result[k];
+            const nxt = result[k + 1];
+            if ((cur.endsWith('н') || cur.endsWith('Н')) &&
+                nxt.length && CYRILLIC_VOWELS.has(nxt[0])) {
+                out += 'ъ';
+            }
+        }
+    }
+    return out;
+}
+
+/* ===================== 10. UI ===================== */
+function updateToggleUI(on, bgId, dotId) {
+    const bg = document.getElementById(bgId);
+    const dot = document.getElementById(dotId);
+    if (on) {
+        bg.classList.remove('bg-parchment-200');
+        bg.classList.add('bg-vermilion-600');
+        dot.classList.add('translate-x-5');
+    } else {
+        bg.classList.remove('bg-vermilion-600');
+        bg.classList.add('bg-parchment-200');
+        dot.classList.remove('translate-x-5');
+    }
+}
+
+function clearInput() {
+    document.getElementById('input').value = '';
+    convert();
+    document.getElementById('input').focus();
+}
+
+function setExample(t) {
+    document.getElementById('input').value = t;
+    convert();
+}
+
+function insertAtCursor(char) {
+    const el = document.getElementById('input');
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const val = el.value;
+    el.value = val.slice(0, start) + char + val.slice(end);
+    el.selectionStart = el.selectionEnd = start + char.length;
+    el.focus();
+    convert();
+}
+
+function copyResult() {
+    const txt = document.getElementById('output').textContent;
+    if (!txt) { showToast('Нечего копировать', false); return; }
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(txt).then(() => showToast('Скопировано!')).catch(() => fallbackCopy(txt));
+    } else fallbackCopy(txt);
+}
+
+function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast('Скопировано!'); }
+    catch { showToast('Ошибка копирования', false); }
+    document.body.removeChild(ta);
+}
+
+function showToast(msg, ok = true) {
+    const toast = document.getElementById('toast');
+    const icon = toast.querySelector('i');
+    document.getElementById('toastMsg').textContent = msg;
+    icon.className = ok ? 'fa-solid fa-circle-check text-green-400' : 'fa-solid fa-circle-exclamation text-red-400';
+    toast.classList.remove('opacity-0');
+    toast.classList.add('toast-animate');
+    setTimeout(() => {
+        toast.classList.remove('toast-animate');
+        toast.classList.add('opacity-0');
+    }, 2000);
+}
+
+/* Build keyboards */
+function buildKeyboards() {
+    const tones = ['ā','á','ǎ','à','ē','é','ě','è','ī','í','ǐ','ì','ō','ó','ǒ','ò','ū','ú','ǔ','ù','ǖ','ǘ','ǚ','ǜ'];
+    const ukeys = ['ü','Ü','v','V'];
+    const toneKB = document.getElementById('toneKeyboard');
+    const uKB = document.getElementById('uKeyboard');
+    tones.forEach(c => {
+        const b = document.createElement('button');
+        b.className = 'kb-btn';
+        b.textContent = c;
+        b.onclick = () => insertAtCursor(c);
+        toneKB.appendChild(b);
+    });
+    ukeys.forEach(c => {
+        const b = document.createElement('button');
+        b.className = 'kb-btn';
+        b.textContent = c;
+        b.onclick = () => insertAtCursor(c);
+        uKB.appendChild(b);
+    });
+}
+
+window.onload = () => {
+    buildKeyboards();
+    // wait a bit for pinyin-pro to load
+    setTimeout(convert, 300);
+};
+</script>
+</body>
+</html>
