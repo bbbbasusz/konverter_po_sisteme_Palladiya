@@ -660,6 +660,28 @@ function matchPlaceElementAt(plainSyls, start) {
     return null;
 }
 
+/**
+ * Find place-element whose Hanzi ends exactly at position `end` (exclusive).
+ * ONLY Hanzi match. Returns { el, start, len } or null.
+ */
+function matchPlaceElementEndingAt(plainSyls, end) {
+    const leftHan = plainSyls.slice(0, end).map(t => t.han).join('');
+    if (!leftHan) return null;
+    for (const el of PLACE_ELEMENTS) {
+        for (const h of el.han) {
+            if (leftHan.endsWith(h)) {
+                const len = Array.from(h).length;
+                return { el, start: end - len, len };
+            }
+        }
+    }
+    return null;
+}
+
+/**
+ * Right-to-left place-name segmentation.
+ * Solves 八里區 (里 ∈ name, 區 = element) and 阿里山鄉 (里 ∈ 阿里).
+ */
 function processPlaceNameFromSyllables(sylTokens, originalText) {
     if (!document.getElementById('placeToggle').checked) return null;
 
@@ -674,56 +696,50 @@ function processPlaceNameFromSyllables(sylTokens, originalText) {
     if (!plainSyls.length) return null;
 
     const toneOn = document.getElementById('toneToggle').checked;
-    const pyStr = plainSyls.map(t => t.plain).join('');
 
-    // ---- Scan left-to-right for ALL place elements (addresses) ----
-    // Pattern: (name syllables)* + place-element, repeated
+    // Peel place-elements from the right
+    const boundaries = []; // { el, start, end } end exclusive
+    let pos = plainSyls.length;
+    while (pos > 0) {
+        const m = matchPlaceElementEndingAt(plainSyls, pos);
+        if (!m) break;
+        boundaries.push({ el: m.el, start: m.start, end: pos });
+        pos = m.start;
+    }
+
+    if (!boundaries.length) {
+        const trimmed = originalText.trim();
+        if (trimmed.length === 1 && DIRECTION_MAP[trimmed]) return DIRECTION_MAP[trimmed];
+        return null;
+    }
+
+    // boundaries collected right-to-left → reverse to left-to-right
+    boundaries.reverse();
+
     const segments = [];
-    let i = 0;
-    let nameBuf = [];
-    let foundAny = false;
-
-    while (i < plainSyls.length) {
-        const m = matchPlaceElementAt(plainSyls, i);
-        if (m) {
-            foundAny = true;
-            // nameBuf + element
-            if (nameBuf.length === 1) {
-                const h = nameBuf[0].han;
-                // Direction ONLY when Hanzi is 东/西/南/北/中
-                if (h && DIRECTION_MAP[h]) {
-                    segments.push(`${DIRECTION_MAP[h]} ${m.el.ru}`);
-                    nameBuf = [];
-                    i += m.len;
-                    continue;
-                }
+    let cursor = 0;
+    for (const b of boundaries) {
+        const nameSyls = plainSyls.slice(cursor, b.start);
+        if (nameSyls.length === 1) {
+            const h = nameSyls[0].han;
+            if (h && DIRECTION_MAP[h]) {
+                segments.push(`${DIRECTION_MAP[h]} ${b.el.ru}`);
+                cursor = b.end;
+                continue;
             }
-            const nameCyr = convertNameSyllables(nameBuf, toneOn);
-            if (nameCyr) segments.push(`${m.el.ru} ${nameCyr}`);
-            else segments.push(m.el.ru);
-            nameBuf = [];
-            i += m.len;
-        } else {
-            nameBuf.push(plainSyls[i]);
-            i++;
         }
+        const nameCyr = convertNameSyllables(nameSyls, toneOn);
+        if (nameCyr) segments.push(`${b.el.ru} ${nameCyr}`);
+        else segments.push(b.el.ru);
+        cursor = b.end;
     }
 
-    // Trailing name syllables without a place element (e.g. 洗水坑60-3)
-    if (nameBuf.length) {
-        if (foundAny) {
-            // leftover after last element → just transliterate
-            const rest = convertNameSyllables(nameBuf, toneOn);
-            if (rest) segments.push(rest);
-        } else {
-            // no element found at all – direction only if single Hanzi 东/西/南/北/中
-            const trimmed = originalText.trim();
-            if (trimmed.length === 1 && DIRECTION_MAP[trimmed]) return DIRECTION_MAP[trimmed];
-            return null;
-        }
+    // Trailing name after last element (e.g. 洗水坑)
+    if (cursor < plainSyls.length) {
+        const rest = convertNameSyllables(plainSyls.slice(cursor), toneOn);
+        if (rest) segments.push(rest);
     }
 
-    if (!foundAny) return null;
     return segments.join(', ');
 }
 
